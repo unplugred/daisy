@@ -17,7 +17,16 @@ else:
 	system = "linux"
 	import pty
 
-plugins = [{}]
+plugins = [{
+	"name": "Blink",
+	"path": "basics/blink"
+},{
+	"name": "Tone",
+	"path": "basics/tone"
+},{
+	"name": "Delay",
+	"path": "basics/delay"
+}]
 for i in range(len(plugins)):
 	codes["plugin"].append(plugins[i]["name"])
 
