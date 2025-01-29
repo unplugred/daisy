@@ -4,12 +4,12 @@
 using namespace daisysp;
 using namespace daisy;
 
-static DaisySeed hw;
-static Oscillator osc;
+DaisySeed hw;
+Oscillator osc;
 
-static void AudioCallback(	AudioHandle::InterleavingInputBuffer	in,
-							AudioHandle::InterleavingOutputBuffer	out,
-							size_t									size) {
+void AudioCallback(	AudioHandle::InterleavingInputBuffer	in,
+					AudioHandle::InterleavingOutputBuffer	out,
+					size_t									size) {
 	float sig;
 	for(size_t i = 0; i < size; i += 2) {
 		sig = osc.Process();

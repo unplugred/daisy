@@ -2,14 +2,14 @@
 
 using namespace daisy;
 
-static DaisySeed hw;
+DaisySeed hw;
 bool ledstate = true;
 int blink = 0;
 int samplerate = 44100;
 
-static void AudioCallback(	AudioHandle::InterleavingInputBuffer	in,
-							AudioHandle::InterleavingOutputBuffer	out,
-							size_t									size) {
+void AudioCallback(	AudioHandle::InterleavingInputBuffer	in,
+					AudioHandle::InterleavingOutputBuffer	out,
+					size_t									size) {
 	for(size_t s = 0; s < size; s += 2) {
 		out[s] = in[s];
 		out[s+1] = in[s+1];

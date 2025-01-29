@@ -24,6 +24,9 @@ plugins = [{
 	"name": "Tone",
 	"path": "basics/tone"
 },{
+	"name": "Oscillator",
+	"path": "basics/oscillator"
+},{
 	"name": "Delay",
 	"path": "basics/delay"
 }]
@@ -129,10 +132,13 @@ def run_plugin(plugin,run):
 	debug("RUNNING "+plugin.upper()+" ON "+run.upper())
 	cd(get_plugin(plugin)["path"])
 	if run == "usb":
-		run_command("make program-dfu")
+		run_command("make program-dfu",True)
 	else:
 		run_command("make program")
 	cd()
+
+def log():
+	run_command("sudo pio device monitor")
 
 def run_program(string):
 	if string.strip() == "":
@@ -141,6 +147,9 @@ def run_program(string):
 
 	if "configure".startswith(args[0]) and ',' not in string and len(args) <= 1:
 		configure()
+		return
+	if "log".startswith(args[0]) and ',' not in string and len(args) <= 1:
+		log()
 		return
 
 	to_build = {}
