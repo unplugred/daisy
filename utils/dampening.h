@@ -4,8 +4,8 @@ public:
 	float target = 0;
 	float speed = .1f;
 	float velocity = 0;
-	int samplerate = 44100;
-	dampendparameter(int sr = 44100, float s = .1f, float v = 0) {
+	int samplerate = 96000;
+	dampendparameter(int sr = 96000, float s = .1f, float v = 0) {
 		samplerate = sr;
 		speed = s;
 		value = v;
