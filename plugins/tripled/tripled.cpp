@@ -44,9 +44,8 @@ void AudioCallback(	AudioHandle::InterleavingInputBuffer	in,
 		for(size_t d = 0; d < DLINES; ++d) {
 			if(delayamt[d].target >= .999f) continue;
 			++linecount;
-			delayamt[d].nextvalue();
-			dindex[d] = ((readpos-1)-samplerate*(delayamt[d].value*(MAX_DLY-MIN_DLY)+MIN_DLY))+buffersize*2;
 
+			dindex[d] = ((readpos-1)-samplerate*(delayamt[d].nextvalue()*(MAX_DLY-MIN_DLY)+MIN_DLY))+buffersize*2;
 			if(++blink[d] >= samplerate*(delayamt[d].value*(MAX_DLY-MIN_DLY)+MIN_DLY)) {
 				hw.SetLed(ledstate);
 				ledstate = !ledstate;
@@ -57,8 +56,8 @@ void AudioCallback(	AudioHandle::InterleavingInputBuffer	in,
 		feedbackamt.nextvalue();
 		mixamt.nextvalue();
 		for(size_t c = 0; c < 2; ++c) {
-			pannedout = 0;
 			feedbackout = 0;
+			pannedout = 0;
 			if(linecount > 0) {
 				for(size_t d = 0; d < DLINES; ++d) {
 					if(delayamt[d].target >= .999f) continue;
@@ -88,10 +87,10 @@ int main(void) {
 	MidiUsbHandler::Config midi_cfg;
 	midi.Init(midi_cfg);
 
+	mixamt = smoothedparameter(samplerate,.1f,.4f);
+	feedbackamt = smoothedparameter(samplerate,.1f,.8f);
 	for(size_t d = 0; d < DLINES; ++d)
 		delayamt[d] = dampendparameter(samplerate,1.f,.32f+d*.1f);
-	feedbackamt = smoothedparameter(samplerate,.1f,.8f);
-	mixamt = smoothedparameter(samplerate,.1f,.4f);
 
 	dcfilter[0] = dc_filter(samplerate);
 	dcfilter[1] = dc_filter(samplerate);
