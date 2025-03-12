@@ -2,9 +2,10 @@ struct smoothedparameter {
 public:
 	float value = 0;
 	float target = 0;
-	float speed = 1.f/9600;
+	float speed = 1.f/9600.f;
 	smoothedparameter(int sr = 96000, float s = 0.1f, float v = 0) {
-		speed = 1.f/(sr*s);
+		if(s < .001f) speed = 1.f;
+		else speed = 1.f/(sr*s);
 		value = v;
 		target = v;
 	};

@@ -1,4 +1,4 @@
-#include "daisy_seed.h"
+#include "daisy_pod.h"
 #include "../../utils/basics.h"
 #include "../../utils/dampening.h"
 #include "../../utils/dc_filter.h"
@@ -13,8 +13,7 @@ dampendparameter delayamt[DLINES];
 smoothedparameter feedbackamt;
 smoothedparameter mixamt;
 
-DaisySeed hw;
-MidiUsbHandler midi;
+DaisyPod hw;
 
 dc_filter dcfilter[2];
 float DSY_SDRAM_BSS delay[96000*MAX_DLY*2];
@@ -45,9 +44,10 @@ void AudioCallback(	AudioHandle::InterleavingInputBuffer	in,
 			if(delayamt[d].target >= .999f) continue;
 			++linecount;
 
-			dindex[d] = ((readpos-1)-samplerate*(delayamt[d].nextvalue()*(MAX_DLY-MIN_DLY)+MIN_DLY))+buffersize*2;
+			dindex[d] = ((readpos-1)-samplerate*(powf(delayamt[d].nextvalue(),2)*(MAX_DLY-MIN_DLY)+MIN_DLY))+buffersize*2;
 			if(++blink[d] >= samplerate*(delayamt[d].value*(MAX_DLY-MIN_DLY)+MIN_DLY)) {
-				hw.SetLed(ledstate);
+				hw.led1.Set(ledstate?1:0,0,0);
+				hw.UpdateLeds();
 				ledstate = !ledstate;
 				blink[d] = 0;
 			}
@@ -67,8 +67,8 @@ void AudioCallback(	AudioHandle::InterleavingInputBuffer	in,
 					feedbackout += delout;
 					pannedout += delout*pan;
 				}
-				feedbackout /= linecount;
-				pannedout /= linecount;
+				//feedbackout /= linecount;
+				//pannedout /= linecount;
 			}
 			delay[readpos*2+c] = fmax(-50.f,fmin(50.f,dcfilter[c].process((feedbackamt.value*feedbackout)+in[s+c])));
 			out[s+c] = mixamt.value*pannedout+(1-mixamt.value)*in[s+c];
@@ -78,14 +78,11 @@ void AudioCallback(	AudioHandle::InterleavingInputBuffer	in,
 }
 
 int main(void) {
-	hw.Configure();
 	hw.Init();
 	hw.SetAudioBlockSize(64);
 	hw.StartAudio(AudioCallback);
+	hw.midi.StartReceive();
 	samplerate = hw.AudioSampleRate();
-
-	MidiUsbHandler::Config midi_cfg;
-	midi.Init(midi_cfg);
 
 	mixamt = smoothedparameter(samplerate,.1f,.4f);
 	feedbackamt = smoothedparameter(samplerate,.1f,.8f);
@@ -97,22 +94,22 @@ int main(void) {
 	for(int i = 0; i < buffersize*2; ++i) delay[i] = 0;
 
 	while(true) {
-		midi.Listen();
-		while(midi.HasEvents()) {
-			auto msg = midi.PopEvent();
+		hw.midi.Listen();
+		while(hw.midi.HasEvents()) {
+			auto msg = hw.midi.PopEvent();
 			switch(msg.type) {
 				case ControlChange: {
 					ControlChangeEvent p = msg.AsControlChange();
 					switch(p.control_number) {
-						case 11:
+						case 74:
 							mixamt.target = p.value/127.f;
 							break;
-						case 12:
+						case 71:
 							feedbackamt.target = p.value/127.f;
 							break;
 						default:
 							for(size_t d = 0; d < DLINES; ++d) {
-								if((d+13) != p.control_number) continue;
+								if((d+22) != p.control_number) continue;
 								delayamt[d].target = p.value/127.f;
 								break;
 							}

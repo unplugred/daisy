@@ -30,8 +30,11 @@ plugins = [{
 	"name": "Delay",
 	"path": "basics/delay"
 },{
-	"name": "Triple D",
-	"path": "plugins/tripled"
+	"name": "Magic Carpet",
+	"path": "plugins/magiccarpet"
+},{
+	"name": "Noise Machine",
+	"path": "plugins/noisemachine"
 }]
 for i in range(len(plugins)):
 	codes["plugin"].append(plugins[i]["name"])

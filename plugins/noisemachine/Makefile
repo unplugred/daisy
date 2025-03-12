@@ -1,6 +1,6 @@
-TARGET = TripleD
+TARGET = NoiseMachine
 
-CPP_SOURCES = tripled.cpp
+CPP_SOURCES = noisemachine.cpp
 
 LIBDAISY_DIR ?= ../../libDaisy
 DAISYSP_DIR ?= ../../DaisySP

@@ -13,10 +13,10 @@ public:
 		velocity = 0;
 	};
 	float nextvalue() {
-		float s = fmax(.0001,speed);
-		float num1 = 2./s;
+		float s = fmax(.001f,speed);
+		float num1 = 2.f/s;
 		float num2 = num1/((float)samplerate);
-		float num3 = 1./(1+num2+.48*num2*num2+.235*num2*num2*num2);
+		float num3 = 1.f/(1+num2+.48f*num2*num2+.235f*num2*num2*num2);
 		float num4 = value-target;
 		float num5 = (velocity+num1*num4)/((float)samplerate);
 		float num6 = target+(num4+num5)*num3;
@@ -28,4 +28,3 @@ public:
 		return value;
 	};
 };
-
