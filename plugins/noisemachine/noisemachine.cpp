@@ -69,30 +69,26 @@ float interpolatesamples(float position, int channel) {
 		delay[(((int)ceil (position))%buffersize)*2+channel]*   fmod(position,1.f);
 }
 
-float boost(float input) {
+float boost(float input, float type) {
 	if(bstamt.value <= 0) return input;
-	if(bstdiramt.value > .5f) {
+
+	// heavy
+	if(type > .5f)
 		return pow(fabs(input),1-bstamt.value*.99)*(input>0?1:-1);
-	} else {
-		if(bstamt.value >= 1) {
-			return 0;
-		} else {
-			float cropmount = pow(bstamt.value,10);
-			float output = (input-fmin(fmax(input,-cropmount),cropmount))/(1-cropmount);
-			if(output > -1 && output < 1)
-				output = output*pow(1-pow(1-fabs(output),12.5),(3/(1-bstamt.value*.98))-3);
-			return output;
-		}
-	}
+
+	// sine fold
+	return sin(input*2*bstamt.value)+input*fmax(1-2*bstamt.value,0);
 }
 
 float effect(float input, int channel) {
+	// ring mod
 	if(effecttyp < .5f) {
 		return input*(sin(effectcycle*6.2831853072f)*effectamt.value+(1-effectamt.value));
 	}
 
+	// sample divide + bit crush
 	if(effecttyp < 1.5f) {
-		if(effectamt.value <= .001f) return 0;
+		if(effectamt.value >= .999f) return 0;
 		float out = lastinput[channel];
 		if(effectfrq.value >= .999f) {
 			out = input;
@@ -102,10 +98,11 @@ float effect(float input, int channel) {
 			lastinput[channel] = input;
 		}
 		if(effectfrq.value <= .001f) return 0;
-		if(effectamt.value >= .999f) return out;
-		return round(out*(1.f/(1-effectamt.value)))*(1-effectamt.value);
+		if(effectamt.value <= .001f) return out;
+		return round(out*(1.f/effectamt.value))*effectamt.value;
 	}
 
+	// filter
 	return input*(1-effectamt.value)+filter.process(input,channel)*effectamt.value;
 }
 
@@ -127,7 +124,8 @@ void AudioCallback(	AudioHandle::InterleavingInputBuffer	in,
 			dlytime = samplerate*(powf(delayamt[d].nextvalue(),2)*(MAX_DLY-MIN_DLY)+MIN_DLY);
 			dindex[d] = ((readpos-1)-dlytime)+buffersize*2;
 			if(++blink[d] >= dlytime) {
-				hw.led1.Set(ledstate[0]?.5:0,0,ledstate[1]?.5:0);
+				hw.led1.Set(ledstate[0]?1.f:0,0,ledstate[1]?1.f:0);
+				hw.led2.Set(ledstate[0]?1.f:0,0,ledstate[1]?1.f:0);
 				hw.UpdateLeds();
 				ledstate[d] = !ledstate[d];
 				blink[d] = 0;
@@ -141,12 +139,10 @@ void AudioCallback(	AudioHandle::InterleavingInputBuffer	in,
 		effectfrq.nextvalue();
 		bstdiramt.nextvalue();
 		stroamt.nextvalue();
-		if(effecttyp < .5f) {
-			effectcycle = fmod(effectcycle+(maptolog10(effectfrq.value,20,20000)/samplerate),1);
-		}
-		if(effecttyp < 1.5f) {
+		if(effecttyp < .5f) // ring mod
+			effectcycle = fmod(effectcycle+(maptolog10(effectfrq.value,1,20000)/samplerate),1);
+		else if(effecttyp < 1.5f) // sample div
 			effectcycle = fmod(effectcycle+1,samplerate/maptolog10(effectfrq.value,20,20000));
-		}
 		for(size_t c = 0; c < 2; ++c) {
 			feedbackout = 0;
 			pannedout = 0;
@@ -158,8 +154,8 @@ void AudioCallback(	AudioHandle::InterleavingInputBuffer	in,
 				pannedout += delout*pan;
 			}
 			float stroin = stereowiden(in[s+c],c);
-			delay[readpos*2+c] = fmax(-50.f,fmin(50.f,boost(effect(dcfilter[c].process((feedbackamt.value*feedbackout)+stroin*inputmute[c].nextvalue()),c))));
-			out[s+c] = boost(mixamt.value*pannedout+(1-mixamt.value)*effect(stroin,c+2));
+			delay[readpos*2+c] = fmax(-50.f,fmin(50.f,boost(effect(dcfilter[c].process((feedbackamt.value*feedbackout)+stroin*inputmute[c].nextvalue()),c),bstdiramt.value)));
+			out[s+c] = boost(mixamt.value*pannedout+(1-mixamt.value)*effect(stroin,c+2),1);
 		}
 		readpos = fmod(readpos+1,buffersize);
 	}
@@ -207,7 +203,7 @@ int main(void) {
 							break;
 						case 9: // FRQ
 							effectfrq.target = p.value/127.f;
-							filter.recalculate(pow(p.value/127.f,2),.9f);
+							filter.recalculate(pow(p.value/127.f,2),.95f);
 							break;
 						case 12: // TYP
 							effecttyp = p.value;
