@@ -18,7 +18,7 @@
 		devShells.default = pkgs.mkShell {
 			buildInputs = [ # packages
 				pkgs.git
-				(pkgs.python311.withPackages (ps: with ps; [ # python packages
+				(pkgs.python3.withPackages (ps: with ps; [ # python packages
 				]))
 				pkgs_arm_gcc.gcc-arm-embedded-10
 				#pkgs.gnumake
